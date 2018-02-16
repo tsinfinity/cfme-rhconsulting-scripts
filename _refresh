@@ -1,0 +1,55 @@
+#!/bin/sh
+#
+# Run this script to keep this repo in sync with upstream
+#
+# See: [Tips](https://www.atlassian.com/git/articles/git-forks-and-upstreams)
+#
+# For more information...
+#
+set -euf -o pipefail
+upstream_url=https://github.com/rhtconsulting/cfme-rhconsulting-scripts.git
+
+if ! (git remote -v | grep -q '^upstream[ 	]' ) ; then
+  echo "Configuring an upstream branch: $upstream_url"
+  git remote add upstream $upstream_url
+fi
+
+if [ $# -eq 0 ] ; then
+  cat <<-EOF
+	Useage:
+	  $0 upstream : Get upstream changes into the upstream branch
+	  $0 master : Merge upstream changes into the master branch
+	  $0 <anybranch> : Rebase's the specified branch to current master
+	EOF
+  exit 1
+fi
+
+branch="$1" ; shift
+
+cbranch=$(git rev-parse --abbrev-ref HEAD)
+case "$branch" in
+upstream)
+  git fetch upstream
+  git stash save
+  git checkout upstream
+  git merge upstream/master
+  git push
+  git stash pop
+  git checkout $cbranch
+  ;;
+master)
+  git stash save
+  git checkout upstream
+  git checkout master
+  git merge upstream
+  git stash pop
+  git checkout $cbranch
+  ;;
+*)
+  git stash save
+  git checkout "$branch"
+  git rebase master
+  git stash pop
+  git checkout $cbranch
+  ;;
+esac
