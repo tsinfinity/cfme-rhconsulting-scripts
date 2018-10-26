@@ -59,8 +59,14 @@ private
       else
         tenant = Tenant.find_by_name(c['tenant_name'])
         if tenant.nil?
+	  # OK... we check if it is the default tenant that has been changed...
+	  vmdb = MiqServer.my_server.get_config
+	  if vmdb.config[:server][:company] == c['tenant_name']
+            tenant = Tenant.first
+	  else
             puts "ERROR: Unable to locate [#{c['tenant_name']}] tenant in catalog [#{c['name']}]"
             exit(1)
+	  end
         end
         c.delete('tenant_name')
         c.merge!({ "tenant_id" => tenant.id })
@@ -82,8 +88,14 @@ private
       else
         tenant = Tenant.find_by_name(t['tenant_name'])
         if tenant.nil?
+	  # OK... we check if it is the default tenant that has been changed...
+	  vmdb = MiqServer.my_server.get_config
+	  if vmdb.config[:server][:company] == t['tenant_name']
+            tenant = Tenant.first
+	  else
             puts "ERROR: Unable to locate [#{t['tenant_name']}] tenant in template [#{t['name']}]"
             exit(1)
+	  end
         end
         t.delete('tenant_name')
         t.merge!({ "tenant_id" => tenant.id })
